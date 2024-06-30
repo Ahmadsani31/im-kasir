@@ -157,7 +157,7 @@ export default {
               >
                 <template #column-5="props">
                   <Link
-                    :href="`/meja/${props.rowData.produk_id}/edit`"
+                    :href="`/produk/${props.rowData.produk_id}/edit`"
                     class="btn btn-sm btn-primary me-2"
                   >
                     <i class="ph-duotone ph-pen"></i>

@@ -11,13 +11,18 @@ let modalEle = ref(null);
 let thisModalObj = null;
 
 onMounted(() => {
-  thisModalObj = new Modal(modalEle.value);
+  thisModalObj = new Modal(modalEle.value, {
+    backdrop: "static",
+    keyboard: false,
+  });
 });
 function _show() {
+  console.log("open modal");
   thisModalObj.show();
 }
 
 function _close() {
+  console.log("close modal");
   thisModalObj.hide();
 }
 
@@ -37,12 +42,7 @@ defineExpose({ show: _show, close: _close });
       <div class="modal-content">
         <div class="modal-header">
           <h5 class="modal-title" id="exampleModalLabel">{{ title }}</h5>
-          <button
-            type="button"
-            class="btn-close"
-            data-bs-dismiss="modal"
-            aria-label="Close"
-          ></button>
+          <button type="button" class="btn-close" @click="_close"></button>
         </div>
         <slot name="body" />
       </div>

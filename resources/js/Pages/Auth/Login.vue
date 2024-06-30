@@ -47,24 +47,11 @@ const imageUrl = (url) => {
     <div class="row">
       <div class="d-flex justify-content-center">
         <div class="auth-header">
-          <h2 class="text-secondary mt-5"><b>I'm Kasir</b></h2>
+          <h2 class="text-secondary mt-5 mb-4"><b>I'm Kasir</b></h2>
         </div>
       </div>
     </div>
-    <div class="d-grid">
-      <button
-        type="button"
-        class="btn mt-2 bg-light-primary bg-light text-muted"
-      >
-        <img
-          :src="imageUrl('assets/images/authentication/google-icon.svg')"
-          alt="image"
-        />Sign In With Google Google
-      </button>
-    </div>
-    <div class="saprator mt-3">
-      <span>or</span>
-    </div>
+
     <div
       v-if="form.errors.login_failed"
       class="alert alert-danger"
@@ -72,9 +59,6 @@ const imageUrl = (url) => {
     >
       {{ form.errors.login_failed }}
     </div>
-    <h5 class="my-4 d-flex justify-content-center">
-      Sign in with Email address
-    </h5>
     <form @submit.prevent="submit">
       <div class="form-floating mb-3">
         <TextInput

@@ -14,12 +14,17 @@ return new class extends Migration
         Schema::create('transaksi', function (Blueprint $table) {
             $table->id('transaksi_id');
             $table->foreignId('user_id')->constrained('users', 'id');
-            $table->string('invoice');
-            $table->string('costumer_nama')->nullable();
+            $table->uuid('transaksi_uuid')->unique();
+            $table->string('invoice')->unique();
+            $table->string('costumer_nama');
+            $table->string('costumer_nama');
+            $table->string('metode_bayar');
+            $table->float('sub_harga', 12, 2);
+            $table->float('pajak', 12, 2);
+            $table->float('total_harga', 12, 2);
             $table->float('bayar', 12, 2);
             $table->float('kembalian', 12, 2);
             $table->bigInteger('diskon');
-            $table->float('total', 12, 2);
             $table->timestamps();
         });
     }

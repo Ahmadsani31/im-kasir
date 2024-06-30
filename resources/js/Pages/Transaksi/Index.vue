@@ -6,6 +6,8 @@ import { onMounted, ref, watch } from "vue";
 
 const props = defineProps({
   meja: Object,
+  jenis: String,
+  jam: String,
 });
 localStorage.jamMeja = 1;
 const Hours = new Date().getHours();
@@ -19,8 +21,10 @@ function show(id) {
   router.get("/katagori/" + id + "/edit");
 }
 const valJam = ref(Hours);
+const jenis = ref(props.jenis ?? "");
 
 const jenisMeja = [
+  { id: "", text: "Pilih Jenis Meja" },
   { id: "STD", text: "Standar" },
   { id: "VIP", text: "VVIP" },
 ];
@@ -52,22 +56,24 @@ const jam = [
   { id: "24", text: "24" },
 ];
 
-const onChangejenis = (val) => {
-  if (val == "") {
-    delete val.target.value;
-  }
+const onChangejenis = (jns, jm) => {
+  // console.log(val);
+  // return false;
+  // if (val == "") {
+  //   delete val.target.value;
+  // }
 
   router.get(
     route("transaksi"),
     {
-      jenis: val.target.value,
+      jenis: jns,
+      jam: jm,
     },
     {
       replace: true,
       preserveState: true,
     }
   );
-  console.log(val.target.value);
 };
 
 onMounted(() => {
@@ -104,11 +110,10 @@ onMounted(() => {
             <div class="row g-4">
               <div class="col-md-6">
                 <select
-                  id="jenis"
+                  v-model="jenis"
                   class="form-control"
-                  @change="onChangejenis($event)"
+                  @change="onChangejenis($event.target.value, props.jam)"
                 >
-                  <option value="">Pilih Jenis</option>
                   <option
                     v-for="(kat, index) in jenisMeja"
                     :value="kat.id"
@@ -119,12 +124,7 @@ onMounted(() => {
                 </select>
               </div>
               <div class="col-md-6">
-                <select
-                  id="jenis"
-                  class="form-control"
-                  @change="onChangejenis($event)"
-                  v-model="valJam"
-                >
+                <select id="jenis" class="form-control" v-model="valJam">
                   <option value="">Pilih Jam</option>
                   <option
                     v-for="(row, index) in jam"
@@ -141,7 +141,7 @@ onMounted(() => {
             <div class="row">
               <div
                 class="col-sm-6 col-lg-4 col-xxl-3"
-                v-for="(row, i) in meja.data"
+                v-for="(row, i) in meja"
                 :key="i"
               >
                 <div class="card border">
@@ -153,8 +153,13 @@ onMounted(() => {
                         class="img-fluid w-100"
                       />
                       <div class="position-absolute top-0 end-0 p-2">
-                        <span class="badge text-bg-primary text-uppercase"
+                        <span
+                          v-if="row.status == true"
+                          class="badge text-bg-primary text-uppercase"
                           >Available</span
+                        >
+                        <span v-else class="badge text-bg-danger text-uppercase"
+                          >Not Available</span
                         >
                       </div>
                     </div>
@@ -185,6 +190,8 @@ onMounted(() => {
                       </li>
                     </ul>
                     <Link
+                      as="button"
+                      :disabled="row.status == false"
                       :href="route('transaksi.pesanan', row.meja_id)"
                       class="btn btn-sm btn-outline-primary mb-2"
                       >Pesan</Link

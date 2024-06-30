@@ -56,13 +56,20 @@ Route::middleware('auth')->group(function () {
 
     Route::get('/transaksi', [App\Http\Controllers\TransaksiController::class, 'index'])->name('transaksi');
     Route::get('/transaksi/pesanan/{id}', [App\Http\Controllers\TransaksiController::class, 'pesanan'])->name('transaksi.pesanan');
-    Route::post('/transaksi/cart', [App\Http\Controllers\TransaksiController::class, 'cart'])->name('transaksi.cart');
+    Route::post('/transaksi/save', [App\Http\Controllers\TransaksiController::class, 'save'])->name('transaksi.save');
+    Route::delete('/transaksi/cancel', [App\Http\Controllers\TransaksiController::class, 'destroyAllCart'])->name('transaksi.cancel');
+
+    Route::get('/transaksi/print/{invoice}', [App\Http\Controllers\TransaksiController::class, 'print'])->name('transaksi.print');
 
     Route::post('/cart/increase', [App\Http\Controllers\CartController::class, 'Increase'])->name('cart.increase');
     Route::post('/cart/decrease', [App\Http\Controllers\CartController::class, 'Decrease'])->name('cart.decrease');
     Route::post('/cart/add', [App\Http\Controllers\CartController::class, 'addToCart'])->name('cart.add');
-    Route::delete('/cart/{cart}', [App\Http\Controllers\CartController::class, 'destroyCart'])->name('cart.delete');
-    Route::delete('/cart-all', [App\Http\Controllers\CartController::class, 'destroyAllCart'])->name('cart.destroy');
+    Route::delete('/cart/{cart}/delete', [App\Http\Controllers\CartController::class, 'destroyCart'])->name('cart.delete');
+    Route::delete('/cart/destroy', [App\Http\Controllers\CartController::class, 'destroyAllCart'])->name('cart.destroy');
+    Route::get('/cart/load', [App\Http\Controllers\CartController::class, 'loadCart'])->name('cart.load');
+
+    Route::get('/laporan', [App\Http\Controllers\LaporanController::class, 'index'])->name('laporan');
+    Route::post('/laporan/transaksi', [App\Http\Controllers\LaporanController::class, 'transaksi'])->name('laporan.transaksi');
 
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');

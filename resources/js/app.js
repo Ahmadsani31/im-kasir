@@ -1,6 +1,7 @@
 import './bootstrap';
 import '../css/app.css';
-// import 'bootstrap';
+import '@popperjs/core';
+import '../../public/assets/js/pcoded.js';
 
 import { createApp, h } from 'vue';
 import { createInertiaApp } from '@inertiajs/vue3';
@@ -10,6 +11,20 @@ import DataTablesLib from 'datatables.net';
 import DataTable from 'datatables.net-vue3';
 import $ from "jquery";
 import VueSweetalert2 from 'vue-sweetalert2';
+
+import Loading from "vue-loading-overlay";
+import "vue-loading-overlay/dist/css/index.css";
+
+import VueHtmlToPaper from "vue-html-to-paper";
+
+const options = {
+  name: "_blank",
+  specs: ["titlebar=yes", "scrollbars=yes"],
+  styles: [
+    "https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css",
+    "https://unpkg.com/kidlat-css/css/kidlat.css"
+  ]
+};
 
 DataTable.use(DataTablesLib);
 
@@ -22,6 +37,8 @@ createInertiaApp({
         return createApp({ render: () => h(App, props) })
             .use(plugin)
             .use(ZiggyVue)
+            .use(VueHtmlToPaper, options)
+            .component('loading', Loading)
             .component('DataTable', DataTable) 
             .component('Swal', VueSweetalert2) 
             .component('$', $) 

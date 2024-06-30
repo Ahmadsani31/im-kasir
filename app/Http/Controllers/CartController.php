@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Resources\CartResource;
 use App\Models\Cart;
 use App\Models\Produk;
 use Illuminate\Http\Request;
@@ -57,15 +58,27 @@ class CartController extends Controller
         return redirect()->back()->with('message', 'Produk Berhasil Ditambahkan');
     }
 
+    public function loadCart()
+    {
+        $cart = Cart::where('cashier_id', Auth::user()->id)->get();
+
+        return response()->json([
+            'status' => true,
+            'message' => 'successfull',
+            'item' => CartResource::collection($cart)
+        ]);
+    }
+
+
     public function destroyCart(Cart $cart)
     {
         $cart->delete();
-        return redirect()->back();
+        // return redirect()->back();
     }
 
     public function destroyAllCart()
     {
         Cart::where('cashier_id', Auth::user()->id)->delete();
-        return redirect()->back();
+        // return redirect()->back();
     }
 }

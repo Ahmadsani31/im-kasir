@@ -1,59 +1,85 @@
 <script setup>
 import { router, useForm } from "@inertiajs/vue3";
-import { ref, defineEmits } from "vue";
+import { ref, defineEmits, computed, reactive } from "vue";
 import Swal from "sweetalert2";
-// const props = defineProps({
-//   produks: Object,
-// });
 
-// const nama = props.produks.item;
-// console.log(nama);
+const emit = defineEmits(["childToParentModal", "setLoading", "unsetLoading"]);
 
-const emit = defineEmits(["childToParentModal"]);
-
-const produk_id = ref("");
-const nama = ref("");
-
-function childMethod(meja_id, val) {
-  form.meja_id = meja_id;
-  console.log(meja_id);
-  getProduk(val);
-}
-
-defineExpose({
-  childMethod,
-});
+const totalDurasi = ref(localStorage.jamMeja);
 
 const props = defineProps({
   dataProduk: Object,
+  cartPesanan: Object,
+  cartMeja: Object,
+  invoice: String,
 });
-const getProduk = (val) => {
-  axios
-    .post("/produk-all", {
-      id: val,
-    })
-    .then((res) => {
-      nama.value = res.data.item.nama;
-      form.produk_id = res.data.item.produk_id;
-      form.harga = res.data.item.harga;
-      console.log(res.data);
-    });
-};
+
+localStorage.invoice = props.invoice;
+
+console.log(localStorage.invoice);
+
+const dataPesanan = props.cartPesanan.data;
+
+const state = reactive({
+  totalHargaMeja: computed(
+    () => parseInt(props.cartMeja.data.harga) * parseInt(localStorage.jamMeja)
+  ),
+  hargaMakanan: computed(() =>
+    dataPesanan.reduce((acc, item) => acc + item.harga * item.jumlah, 0)
+  ),
+  jumlahMakanan: computed(() =>
+    dataPesanan.reduce((acc, item) => acc + item.jumlah, 0)
+  ),
+  subTotal: computed(
+    () => parseInt(state.totalHargaMeja) + parseInt(state.hargaMakanan)
+  ),
+  pajak: computed(() => parseInt(state.subTotal) * 0.11),
+  grandTotal: computed(() => parseInt(state.subTotal) + parseInt(state.pajak)),
+});
 
 function submit() {
-  router.post(route("transaksi.cart"), form, {
+  emit("setLoading");
+  if (form.bayar < state.grandTotal) {
+    emit("unsetLoading");
+    return new Swal({
+      title: "Perhatian",
+      text: "Uang Pembayaran Tidak Cukup",
+      icon: "warning",
+      showConfirmButton: false,
+      timer: 1500,
+    });
+    return false;
+  }
+  router.post(route("transaksi.save"), form, {
     preserveState: true,
     preserveScroll: true,
     onSuccess: (page) => {
       //   thisModal.value.close();
-      Toast.fire({
-        icon: "success",
-        title: "Pesanan Berhasil Ditambahkan",
-      });
-      emit("childToParentModal");
-    },
-    onProgress: (progress) => {
-      console.log(progress);
+      emit("unsetLoading");
+      console.log(page);
+      console.log(page.props.flash.items.uuid);
+
+      if (page.props.flash.status == false) {
+        return new Swal({
+          title: "Perhatian!",
+          text: page.props.flash.message,
+          icon: "error",
+          showConfirmButton: false,
+          timer: 2500,
+        });
+      } else {
+        emit("childToParentModal");
+
+        Toast.fire({
+          icon: "success",
+          title: "Pesanan Berhasil Ditambahkan",
+        });
+        open(route("transaksi.print", page.props.flash.items.uuid));
+
+        router.visit(route("transaksi"), { preserveScroll: false });
+      }
+
+      console.log(localStorage.invoice);
     },
   });
 }
@@ -75,9 +101,17 @@ function formatPrice(value) {
   return val.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");
 }
 
-const dateObj = new Date();
-const currentDate =
-  dateObj.getDate() + "/" + dateObj.getMonth() + "/" + dateObj.getFullYear();
+const clock = reactive({
+  jam: new Date(),
+  currentDate: computed(
+    () =>
+      clock.jam.getDate() +
+      "/" +
+      clock.jam.getMonth() +
+      "/" +
+      clock.jam.getFullYear()
+  ),
+});
 
 const jenisPembayaran = [
   { id: "Cash", text: "Cash" },
@@ -86,23 +120,28 @@ const jenisPembayaran = [
   { id: "Gopay", text: "Gopay" },
   { id: "Qris", text: "Qris" },
 ];
-
-const form = useForm({
-  methode_bayar: "",
-});
 const changeMonay = ref(0);
 
 const kembalian = (e) => {
-  changeMonay.value = props.dataProduk.total - e.target.value;
+  changeMonay.value = e.target.value - state.grandTotal;
   console.log(changeMonay.value);
 };
+
+const form = useForm({
+  methode_bayar: "",
+  costumer: "",
+  bayar: 0,
+  jam: localStorage.jamMeja,
+  meja_id: props.cartMeja.data.meja_id,
+  invoice: props.invoice,
+});
 </script>
 <template>
   <form @submit.prevent="submit">
     <div class="modal-body">
       <div class="d-flex align-items-center justify-content-between mb-2">
-        <h4 class="font-bold mb-0">{{ dataProduk.invoice }}</h4>
-        <h4 class="font-bold mb-0">{{ currentDate }}</h4>
+        <h4 class="font-bold mb-0">{{ props.invoice }}</h4>
+        <h4 class="font-bold mb-0">{{ clock.currentDate }}</h4>
       </div>
       <div class="card mb-0">
         <div class="card-body p-3">
@@ -118,10 +157,10 @@ const kembalian = (e) => {
                 </tr>
               </thead>
               <tbody>
-                <tr v-for="(row, idx) in dataProduk.meja" :key="idx">
+                <tr v-for="(row, idx) in cartMeja" :key="idx">
                   <th><img :src="row.gambar" alt="img" width="40" /></th>
                   <td>{{ row.nama }}</td>
-                  <td>{{ dataProduk.jam }}</td>
+                  <td>{{ totalDurasi }}</td>
                   <td>Rp.{{ formatPrice(row.harga) }}</td>
                 </tr>
               </tbody>
@@ -129,8 +168,7 @@ const kembalian = (e) => {
           </div>
         </div>
       </div>
-
-      <div class="card mt-0">
+      <div v-if="cartPesanan.data.length > 0" class="card m-0">
         <div class="card-body p-3">
           <h5 class="font-bold mb-0">Pesanan Makanan</h5>
           <div class="border rounded p-1 h-100 mt-0">
@@ -144,7 +182,7 @@ const kembalian = (e) => {
                 </tr>
               </thead>
               <tbody>
-                <tr v-for="(roww, idxx) in dataProduk.cart" :key="idxx">
+                <tr v-for="(roww, idxx) in cartPesanan.data" :key="idxx">
                   <th><img :src="roww.gambar" alt="img" width="40" /></th>
                   <td>{{ roww.nama_produk }}</td>
                   <td>
@@ -164,16 +202,14 @@ const kembalian = (e) => {
             <p class="text-muted mb-1 text-start">Total Pesanan</p>
           </div>
           <div class="col-6">
-            <p class="f-w-600 mb-1 text-end">
-              {{ dataProduk.pesanan }} Makanan
-            </p>
+            <p class="f-w-600 mb-1 text-end">{{ state.jumlahMakanan }}</p>
           </div>
           <div class="col-6">
             <p class="text-muted mb-1 text-start">Sub Total :</p>
           </div>
           <div class="col-6">
             <p class="f-w-600 mb-1 text-end">
-              Rp. {{ formatPrice(dataProduk.harga) }}
+              Rp. {{ formatPrice(state.subTotal) }}
             </p>
           </div>
           <div class="col-6">
@@ -187,7 +223,7 @@ const kembalian = (e) => {
           </div>
           <div class="col-6">
             <p class="f-w-600 mb-1 text-end">
-              Rp.{{ formatPrice(dataProduk.pajak) }}
+              Rp.{{ formatPrice(state.pajak) }}
             </p>
           </div>
           <div class="col-6">
@@ -195,7 +231,7 @@ const kembalian = (e) => {
           </div>
           <div class="col-6">
             <p class="f-w-600 mb-1 text-end">
-              Rp.{{ formatPrice(dataProduk.total) }}
+              Rp.{{ formatPrice(state.grandTotal) }}
             </p>
           </div>
           <hr />
@@ -208,6 +244,18 @@ const kembalian = (e) => {
             </p>
           </div>
         </div>
+      </div>
+
+      <div class="mb-3">
+        <label class="form-label">Custumer</label>
+        <input
+          type="text"
+          class="form-control"
+          v-model.trim="form.costumer"
+          @input="form.costumer = $event.target.value.toUpperCase()"
+          placeholder="Tulis nama custumer"
+          required
+        />
       </div>
       <div class="mb-3">
         <label for="mtd_bayar" class="form-label">Jenis Pembayaran</label>
@@ -229,12 +277,22 @@ const kembalian = (e) => {
       </div>
       <div class="mb-3">
         <label class="form-label">Bayar</label>
-        <input type="number" class="form-control" @keyup="kembalian" required />
+        <input
+          type="number"
+          class="form-control"
+          v-model="form.bayar"
+          @keyup="kembalian"
+          required
+        />
       </div>
     </div>
 
     <div class="modal-footer">
-      <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+      <button
+        type="button"
+        class="btn btn-secondary"
+        @click="$emit('childToParentModal')"
+      >
         Close
       </button>
       <!-- <button
@@ -248,3 +306,8 @@ const kembalian = (e) => {
     </div>
   </form>
 </template>
+<style>
+.swal2-container {
+  z-index: 10000;
+}
+</style>
